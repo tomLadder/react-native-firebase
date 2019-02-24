@@ -117,9 +117,9 @@ class FirestoreSerialize {
     List<DocumentChange> documentChanges = querySnapshot.getDocumentChanges();
 
     // convert documents documents
-    for (DocumentSnapshot documentSnapshot : documentSnapshots) {
+    /* for (DocumentSnapshot documentSnapshot : documentSnapshots) {
       documents.pushMap(snapshotToWritableMap(documentSnapshot));
-    }
+    } */
 
     // build metadata
     metadata.putBoolean(KEY_META_FROM_CACHE, snapshotMetadata.isFromCache());
