@@ -378,14 +378,18 @@ RCT_EXPORT_METHOD(settings:(NSString *)appDisplayName
     } else {
         firestoreSettings.persistenceEnabled = firestore.settings.persistenceEnabled;
     }
+    if (settings[@"cacheSizeBytes"]) {
+        firestoreSettings.cacheSizeBytes = settings[@"cacheSizeBytes"];
+    } else {
+        firestoreSettings.cacheSizeBytes = firestore.settings.cacheSizeBytes;
+    }
     if (settings[@"ssl"]) {
         firestoreSettings.sslEnabled = settings[@"ssl"];
     } else {
         firestoreSettings.sslEnabled = firestore.settings.sslEnabled;
     }
     if (settings[@"timestampsInSnapshots"]) {
-        // TODO: Enable when available on Android
-        // firestoreSettings.timestampsInSnapshotsEnabled = settings[@"timestampsInSnapshots"];
+        firestoreSettings.timestampsInSnapshotsEnabled = settings[@"timestampsInSnapshots"];
     }
 
     [firestore setSettings:firestoreSettings];

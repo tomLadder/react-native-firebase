@@ -39,7 +39,6 @@ declare module 'react-native-firebase' {
     RNFirebase.functions.FunctionsStatics
   >;
   type IidModule = FirebaseModuleAndStatics<RNFirebase.iid.InstanceId>;
-  // type InvitesModule = FirebaseModuleAndStatics<RNFirebase.invites.Invites>;
   type LinksModule = FirebaseModuleAndStatics<
     RNFirebase.links.Links,
     RNFirebase.links.LinksStatics
@@ -72,7 +71,6 @@ declare module 'react-native-firebase' {
     firestore: FirestoreModule;
     functions: FunctionsModule;
     iid: IidModule;
-    // invites: InvitesModule;
     links: LinksModule;
     messaging: MessagingModule;
     notifications: NotificationsModule;
@@ -109,7 +107,6 @@ declare module 'react-native-firebase' {
   export const firestore: FirestoreModule;
   export const functions: FunctionsModule;
   export const iid: IidModule;
-  // export const invites: InvitesModule;
   export const links: LinksModule;
   export const messaging: MessagingModule;
   export const notifications: NotificationsModule;
@@ -132,11 +129,10 @@ declare module 'react-native-firebase' {
 
     firestore(): RNFirebase.firestore.Firestore;
 
-    functions(): RNFirebase.functions.Functions;
+    functions(appOrRegion?: string| App, region?: string): RNFirebase.functions.Functions;
 
     iid(): RNFirebase.iid.InstanceId;
 
-    // invites(): RNFirebase.invites.Invites;
     links(): RNFirebase.links.Links;
 
     messaging(): RNFirebase.messaging.Messaging;
@@ -241,7 +237,7 @@ declare module 'react-native-firebase' {
     namespace storage {
       interface StorageStatics {
         TaskState: TaskState;
-        TaskEvent: TaskState;
+        TaskEvent: TaskEvent;
         Native?: {
           MAIN_BUNDLE_PATH: string;
           CACHES_DIRECTORY_PATH: string;
@@ -928,11 +924,18 @@ declare module 'react-native-firebase' {
       verificationId: string | null;
     }
 
+    interface NativeError extends Error {
+      code: string;
+      message: string;
+      nativeErrorCode?: string;
+      nativeErrorMessage?: string;
+    }
+
     type PhoneAuthSnapshot = {
       state: 'sent' | 'timeout' | 'verified' | 'error';
       verificationId: string;
       code: string | null;
-      error: Error | null;
+      error: NativeError | null;
     };
 
     type PhoneAuthError = {
@@ -1003,8 +1006,10 @@ declare module 'react-native-firebase' {
           smsCode: string
         ): Promise<null>;
       }
+
       type OrNull<T> = T | null;
       type AuthListenerCallback = (user: OrNull<User>) => void;
+
       interface Auth {
         readonly app: App;
         /**
@@ -1213,9 +1218,9 @@ declare module 'react-native-firebase' {
     namespace messaging {
       interface Messaging {
         /**
-        * Returns firebase.messaging.IOSMessaging that gets the
-        *  iOS specific methods and properties of messaging.
-        */
+         * Returns firebase.messaging.IOSMessaging that gets the
+         *  iOS specific methods and properties of messaging.
+         */
         ios: IOSMessaging;
 
         /**
@@ -1319,6 +1324,31 @@ declare module 'react-native-firebase' {
     }
 
     namespace notifications {
+      interface NativeAndroidChannel {
+        bypassDnd?: boolean;
+        channelId: string;
+        description?: string;
+        group?: string;
+        importance: number;
+        lightColor?: string;
+        lightsEnabled?: boolean;
+        lockScreenVisibility?: number;
+        name: string;
+        showBadge?: boolean;
+        sound?: string;
+        vibrationEnabled?: boolean;
+        vibrationPattern?: number[];
+      }
+
+      interface NativeAndroidChannelGroup {
+        name: string;
+        groupId: string;
+        // Android API >= 28
+        description: string | void;
+        // Android API >= 28
+        channels: void | NativeAndroidChannel[];
+      }
+
       interface AndroidNotifications {
         createChannel(channel: Android.Channel): Promise<void>;
 
@@ -1333,13 +1363,28 @@ declare module 'react-native-firebase' {
         deleteChannelGroup(groupId: string): Promise<void>;
 
         deleteChannel(channelId: string): Promise<void>;
+
+        getChannel(channelId: string): Promise<NativeAndroidChannel | null>;
+
+        getChannels(channelId: string): Promise<NativeAndroidChannel[]>;
+
+        getChannelGroup(
+          channelId: string
+        ): Promise<NativeAndroidChannelGroup | null>;
+
+        getChannelGroups(
+          channelId: string
+        ): Promise<NativeAndroidChannelGroup[]>;
       }
 
       type BackgroundFetchResultValue = string;
       type CompletionHandler = (
         backgroundFetchResult: BackgroundFetchResultValue
       ) => void;
-
+      type Schedule = {
+        fireDate: number;
+        repeatInterval?: 'minute' | 'hour' | 'day' | 'week';
+      };
       interface Notifications {
         android: AndroidNotifications;
 
@@ -1383,7 +1428,10 @@ declare module 'react-native-firebase' {
         /**
          * Schedule a local notification to be shown on the device.
          */
-        scheduleNotification(notification: Notification, schedule: any): any;
+        scheduleNotification(
+          notification: Notification,
+          schedule: Schedule
+        ): any;
 
         /**
          * Sets the badge number on the iOS app icon.
@@ -1395,7 +1443,7 @@ declare module 'react-native-firebase' {
         android: AndroidNotification;
         ios: IOSNotification;
         body: string;
-        data: any;
+        data: { [key: string]: string };
         notificationId: string;
         sound?: string;
         subtitle?: string;
@@ -1975,6 +2023,13 @@ declare module 'react-native-firebase' {
     }
 
     namespace crashlytics {
+      type customError = {
+        fileName:string,
+        className?:string,
+        functionName?:string,
+        lineNumber?:number,
+        additional?:Object
+      }
       interface Crashlytics {
         /**
          * Forces a crash. Useful for testing your application is set up correctly.
@@ -1990,6 +2045,11 @@ declare module 'react-native-firebase' {
          * Logs a non fatal exception.
          */
         recordError(code: number, message: string): void;
+
+        /**
+         * Logs a custom non fatal exception.
+         */
+        recordCustomError(name:string, message:string, stack?:customError[]):void;
 
         /**
          * Set a boolean value to show alongside any subsequent crash reports.
@@ -2015,6 +2075,16 @@ declare module 'react-native-firebase' {
          * Set the user ID to show alongside any subsequent crash reports.
          */
         setUserIdentifier(userId: string): void;
+
+        /**
+         * Set the user name to show alongside any subsequent crash reports.
+         */
+        setUserName(userName: string): void;
+
+        /**
+         * Set the user email to show alongside any subsequent crash reports.
+         */
+        setUserEmail(userEmail: string): void;
 
         /**
          * Enable Crashlytics reporting. Only avaliable when disabled automatic initialization
@@ -2059,7 +2129,7 @@ declare module 'react-native-firebase' {
         navigation: NavigationParameters;
         social: SocialParameters;
 
-        constructor(link: string, dynamicLinkDomain: string);
+        constructor(link: string, domainURIPrefix: string);
       }
 
       interface AnalyticsParameters {
@@ -2196,10 +2266,9 @@ declare module 'react-native-firebase' {
        * An HttpsCallable is a reference to a "callable" http trigger in
        * Google Cloud Functions.
        */
-      type HttpsCallable<Params, Result> =
-        Params extends void ?
-          () => Promise<HttpsCallableResult<Result>> :
-          (data: Params) => Promise<HttpsCallableResult<Result>>
+      type HttpsCallable<Params, Result> = Params extends void
+        ? () => Promise<HttpsCallableResult<Result>>
+        : (data: Params) => Promise<HttpsCallableResult<Result>>;
 
       /**
        * `FirebaseFunctions` represents a Functions app, and is the entry point for
@@ -2213,7 +2282,9 @@ declare module 'react-native-firebase' {
          * @param name The name of the https callable function.
          * @return The `HttpsCallable` instance.
          */
-        httpsCallable<Params = any, Result = any>(name: string): HttpsCallable<Params, Result>;
+        httpsCallable<Params = any, Result = any>(
+          name: string
+        ): HttpsCallable<Params, Result>;
 
         /**
          * Changes this instance to point to a Cloud Functions emulator running
@@ -2237,6 +2308,11 @@ declare module 'react-native-firebase' {
          * Uppercased + underscored variables of @FunctionsErrorCode
          */
         HttpsErrorCode: HttpsErrorCode;
+        /**
+         * constructor overload:
+         * See https://github.com/invertase/react-native-firebase-docs/blob/master/docs/functions/reference/functions.md
+         */
+        (appOrRegion?: string| App, region?: string): Functions
       }
 
       interface HttpsError extends Error {
@@ -2280,7 +2356,7 @@ declare module 'react-native-firebase' {
         FieldPath: typeof FieldPath;
         FieldValue: typeof FieldValue;
         GeoPoint: typeof GeoPoint;
-
+        Timestamp: typeof Timestamp;
         enableLogging(enabled: boolean): void;
 
         setLogLevel(logLevel: 'debug' | 'error' | 'silent'): void;
@@ -2290,6 +2366,7 @@ declare module 'react-native-firebase' {
         readonly firestore: Firestore;
         readonly id: string;
         readonly parent: DocumentReference;
+        readonly path: string;
 
         add(data: object): Promise<DocumentReference>;
 
@@ -2306,6 +2383,8 @@ declare module 'react-native-firebase' {
         get(options?: Types.GetOptions): Promise<QuerySnapshot>;
 
         limit(limit: number): Query;
+
+        isEqual(otherCollectionReference: CollectionReference): boolean;
 
         onSnapshot(
           onNext: Query.ObserverOnNext,
@@ -2354,13 +2433,15 @@ declare module 'react-native-firebase' {
 
       interface DocumentReference {
         readonly firestore: Firestore;
-        readonly id: string | null;
+        readonly id: string;
         readonly parent: CollectionReference;
         readonly path: string;
 
         collection(collectionPath: string): CollectionReference;
 
         delete(): Promise<void>;
+
+        isEqual(otherDocumentReference: DocumentReference): boolean;
 
         get(options?: Types.GetOptions): Promise<DocumentSnapshot>;
 
@@ -2441,7 +2522,7 @@ declare module 'react-native-firebase' {
 
       interface DocumentSnapshot {
         readonly exists: boolean;
-        readonly id: string | null;
+        readonly id: string;
         readonly metadata: Types.SnapshotMetadata;
         readonly ref: DocumentReference;
 
@@ -2462,6 +2543,19 @@ declare module 'react-native-firebase' {
         toUint8Array(): Uint8Array;
       }
 
+      class Timestamp {
+        readonly seconds: number;
+        readonly nanoseconds: number;
+        static now(): Timestamp;
+        static fromDate(date: Date): Timestamp;
+        static fromMillis(milliseconds: number): Timestamp;
+        constructor(seconds: number, nanoseconds: number);
+        toDate(): Date;
+        toMillis(): number;
+        isEqual(other: Timestamp): boolean;
+        toString(): string;
+      }
+
       class FieldPath {
         static documentId(): FieldPath;
 
@@ -2474,6 +2568,8 @@ declare module 'react-native-firebase' {
         static delete(): FieldValue;
 
         static serverTimestamp(): FieldValue;
+
+        static increment(n: number): FieldValue;
 
         static arrayUnion(...elements: AnyJs[]): FieldValue;
 
@@ -2518,6 +2614,8 @@ declare module 'react-native-firebase' {
         endBefore(...varargs: any[]): Query;
 
         get(options?: Types.GetOptions): Promise<QuerySnapshot>;
+
+        isEqual(otherQuery: Query): boolean;
 
         limit(limit: number): Query;
 
@@ -2630,6 +2728,7 @@ declare module 'react-native-firebase' {
       interface Settings {
         host?: string;
         persistence?: boolean;
+        cacheSizeBytes?: number;
         ssl?: boolean;
         timestampsInSnapshots?: boolean;
       }
@@ -2928,6 +3027,7 @@ declare module 'react-native-firebase/firestore' {
   export type DocumentReference = RNFirebase.firestore.DocumentReference;
   export type DocumentSnapshot = RNFirebase.firestore.DocumentSnapshot;
   export type FieldPath = RNFirebase.firestore.FieldPath;
+  export type Timestamp = RNFirebase.firestore.Timestamp;
   export type FieldValue = RNFirebase.firestore.FieldValue;
   export type GeoPoint = RNFirebase.firestore.GeoPoint;
   export type Path = RNFirebase.firestore.Path;
