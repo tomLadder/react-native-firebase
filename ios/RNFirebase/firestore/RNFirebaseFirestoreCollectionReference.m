@@ -219,8 +219,9 @@ queryListenOptions:(NSDictionary *)queryListenOptions {
 
 + (NSDictionary *)snapshotToDictionary:(FIRQuerySnapshot *)querySnapshot {
   NSMutableDictionary *snapshot = [[NSMutableDictionary alloc] init];
+  NSMutableArray *docs = [NSMutableArray new];
   [snapshot setValue:[self documentChangesToArray:querySnapshot.documentChanges] forKey:@"changes"];
-  # [snapshot setValue:[self documentSnapshotsToArray:querySnapshot.documents] forKey:@"documents"];
+  [snapshot setValue:docs forKey:@"documents"];
     
   if (querySnapshot.metadata) {
     NSMutableDictionary *metadata = [[NSMutableDictionary alloc] init];
