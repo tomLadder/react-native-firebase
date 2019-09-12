@@ -119,13 +119,13 @@ class FirestoreSerialize {
     WritableArray documents = Arguments.createArray();
 
     SnapshotMetadata snapshotMetadata = querySnapshot.getMetadata();
-    List<DocumentSnapshot> documentSnapshots = querySnapshot.getDocuments();
+    // List<DocumentSnapshot> documentSnapshots = querySnapshot.getDocuments();
     List<DocumentChange> documentChanges = querySnapshot.getDocumentChanges();
 
     // convert documents documents
-    for (DocumentSnapshot documentSnapshot : documentSnapshots) {
-      documents.pushMap(snapshotToWritableMap(documentSnapshot));
-    }
+    // for (DocumentSnapshot documentSnapshot : documentSnapshots) {
+    //   documents.pushMap(snapshotToWritableMap(documentSnapshot));
+    // }
 
     // build metadata
     metadata.putBoolean(KEY_META_FROM_CACHE, snapshotMetadata.isFromCache());

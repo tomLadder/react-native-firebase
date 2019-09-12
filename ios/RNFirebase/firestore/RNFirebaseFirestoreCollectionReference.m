@@ -220,7 +220,8 @@ queryListenOptions:(NSDictionary *)queryListenOptions {
 + (NSDictionary *)snapshotToDictionary:(FIRQuerySnapshot *)querySnapshot {
   NSMutableDictionary *snapshot = [[NSMutableDictionary alloc] init];
   [snapshot setValue:[self documentChangesToArray:querySnapshot.documentChanges] forKey:@"changes"];
-  [snapshot setValue:[self documentSnapshotsToArray:querySnapshot.documents] forKey:@"documents"];
+  # [snapshot setValue:[self documentSnapshotsToArray:querySnapshot.documents] forKey:@"documents"];
+    
   if (querySnapshot.metadata) {
     NSMutableDictionary *metadata = [[NSMutableDictionary alloc] init];
     [metadata setValue:@(querySnapshot.metadata.fromCache) forKey:@"fromCache"];
